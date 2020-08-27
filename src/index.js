@@ -2,25 +2,23 @@ import 'regenerator-runtime/runtime';
 import Rete from "rete";
 import ConnectionPlugin from "rete-connection-plugin";
 import Stage0RenderPlugin from 'rete-stage0-render-plugin';
-// import VueRenderPlugin from "rete-vue-render-plugin";
-// import ReactRenderPlugin from "rete-react-render-plugin";
-// import AlightRenderPlugin from "rete-alight-render-plugin";
-import NumComponent from "./NumComponent";
-import AddComponent from "./AddComponent";
+import NumComponent from "./components/NumComponent";
+import AddComponent from "./components/AddComponent";
+import OutComponent from "./components/OutComponent";
 import ContextMenuPlugin from "rete-context-menu-plugin";
 import AreaPlugin from "rete-area-plugin";
-import data from "./simple.json";
+import demoData from "./simple.json";
 
 document.getElementById("app").innerHTML = `<h1>Blendtree Prototype</h1>`;
 
-(async (container) => {
-  var components = [new NumComponent(), new AddComponent()];
+const STORAGE_KEY = 'BLENDTREE_PROTOTYPE_DOCUMENT';
+
+(async () => {
+  const container = document.querySelector("#rete");
+  var components = [new NumComponent(), new AddComponent(), new OutComponent()];
 
   var editor = new Rete.NodeEditor("retejs@0.1.0", container);
   editor.use(ConnectionPlugin);//, { curvature: 0.4 });
-  // editor.use(AlightRenderPlugin);
-  // editor.use(VueRenderPlugin);
-  // editor.use(ReactRenderPlugin);
   editor.use(Stage0RenderPlugin);
   editor.use(ContextMenuPlugin);
 
@@ -48,18 +46,24 @@ document.getElementById("app").innerHTML = `<h1>Blendtree Prototype</h1>`;
 
   // console.log(editor.toJSON());
 
-  console.log("DATA", data);
+  const data = (() => {
+    const localDataString = localStorage.getItem(STORAGE_KEY);
+    if (localDataString) return JSON.parse(localDataString) || demoData;
+    return demoData;
+  })();
   await editor.fromJSON(data);
 
   editor.on(
     "process nodecreated noderemoved connectioncreated connectionremoved",
     async () => {
       await engine.abort();
-      await engine.process(editor.toJSON());
+      const data = editor.toJSON();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      await engine.process(data);
     }
   );
 
   editor.view.resize();
   AreaPlugin.zoomAt(editor);
   editor.trigger("process");
-})(document.querySelector("#rete"));
+})();

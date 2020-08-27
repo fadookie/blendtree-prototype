@@ -1,7 +1,7 @@
 import { Component, Output } from "rete";
 // import { FieldControl } from "./controls/field";
-import Socket from "./sockets";
-import NumControl from "./NumControl";
+import Socket from "../sockets";
+import NumControl from "../controls/NumControl";
 
 const DefaultControl = NumControl;
 
