@@ -1,39 +1,48 @@
 import Rete from "rete";
 
-export default class NumControl extends Rete.Control {
-  constructor(emitter, key, type, readonly) {
-    super(key);
-    this.emitter = emitter;
-    this.key = key;
-    this.template =
-      '<input type="number" :readonly="readonly" :value="value" @input="change($event)"/>';
-    this.props = { emitter, ikey: key, type, readonly };
+const Stage0NumControl = {
+  template: '<input type="number"/>',
+  data() {
+    return {
+      value: 0
+    };
+  },
+  methods: {
+    update() {
+      if (this.root) {
+        this.putData(this.ikey, +this.root.value);
+      }
 
-    this.scope = {
-      value: 0,
-      readonly,
-      change: this.change.bind(this)
+      this.emitter.trigger("process");
+    }
+  },
+  mounted() {
+    const _self = this;
+
+    this.root.value = this.getData(this.ikey);
+
+    this.root.onkeyup = function(e) {
+      _self.root.update();
+    };
+
+    this.root.onmouseup = function(e) {
+      _self.root.update();
+    };
+
+    this.root.ondblclick = function(e) {
+      e.stopPropagation();
     };
   }
+};
 
-  change(e) {
-    this.scope.value = +e.target.value;
-    this.update();
-  }
-
-  update() {
-    if (this.key) this.putData(this.key, this.scope.value);
-    this.emitter.trigger("process");
-    this._alight.scan();
-  }
-
-  mounted() {
-    this.scope.value = this.getData(this.key) || 0;
-    this.update();
+export default class NumControl extends Rete.Control {
+  constructor(emitter, key, readonly) {
+    super(key);
+    this.component = Stage0NumControl;
+    this.props = { emitter, ikey: key, readonly };
   }
 
   setValue(val) {
-    this.scope.value = val;
-    this._alight.scan();
+    this.stage0Context.root.value = val; // TODO get rid of stage0Context
   }
 }
