@@ -1,5 +1,5 @@
 import { Component, Output } from "rete";
-// import { FieldControl } from "./FieldControl";
+// import { FieldControl } from "./controls/field";
 import Socket from "./sockets";
 import NumControl from "./NumControl";
 
