@@ -4,10 +4,13 @@ module.exports = {
     mode: 'development',
     devtool: 'none',
     target: 'node',
-    entry: './index.js',
+    entry: './src/index.js',
     output: {
         filename: 'index.js',
-        path: PathModule.resolve(__dirname, 'build')
+        path: PathModule.resolve(__dirname, 'dist')
+    },
+    devServer: {
+        contentBase: PathModule.join(__dirname, 'dist')
     }
 }
 
