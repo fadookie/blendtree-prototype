@@ -6,6 +6,7 @@ import NumComponent from "./components/NumComponent";
 import AddComponent from "./components/AddComponent";
 import OutComponent from "./components/OutComponent";
 import StateComponent from "./components/StateComponent";
+import StateMachineComponent from "./components/StateMachineComponent";
 import ContextMenuPlugin from "rete-context-menu-plugin";
 import AreaPlugin from "rete-area-plugin";
 import demoData from "./simple.json";
@@ -19,10 +20,16 @@ const STORAGE_KEY = 'BLENDTREE_PROTOTYPE_DOCUMENT';
 
 (async () => {
   const container = document.querySelector("#rete");
-  var components = [new NumComponent(), new AddComponent(), new OutComponent(), new StateComponent()];
+  var components = [
+    new NumComponent(),
+    new AddComponent(),
+    new OutComponent(),
+    new StateComponent(),
+    new StateMachineComponent(),
+  ];
 
   var editor = new Rete.NodeEditor("retejs@0.1.0", container);
-  editor.use(ConnectionPlugin);//, { curvature: 0.4 });
+  editor.use(ConnectionPlugin, { curvature: 0 }); // TODO curvature has no effect?
   editor.use(Stage0RenderPlugin);
   editor.use(ContextMenuPlugin);
 
