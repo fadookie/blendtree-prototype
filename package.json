@@ -15,7 +15,9 @@
   "author": "Eliot Lash",
   "license": "UNLICENSED",
   "devDependencies": {
+    "css-loader": "4.2.2",
     "eslint": "7.7.0",
+    "style-loader": "1.2.1",
     "webpack": "4.44.1",
     "webpack-cli": "3.3.12",
     "webpack-dev-server": "3.11.0"
@@ -26,6 +28,7 @@
     "rete-area-plugin": "0.2.1",
     "rete-connection-plugin": "0.9.0",
     "rete-context-menu-plugin": "0.6.0-rc.1",
+    "rete-stage0-menu-plugin": "0.3.7",
     "rete-stage0-render-plugin": "0.2.14"
   }
 }
