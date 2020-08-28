@@ -5,9 +5,13 @@ import Stage0RenderPlugin from 'rete-stage0-render-plugin';
 import NumComponent from "./components/NumComponent";
 import AddComponent from "./components/AddComponent";
 import OutComponent from "./components/OutComponent";
+import StateComponent from "./components/StateComponent";
 import ContextMenuPlugin from "rete-context-menu-plugin";
 import AreaPlugin from "rete-area-plugin";
 import demoData from "./simple.json";
+import './styles.css';
+import 'rete-stage0-menu-plugin/build/stage0-menu-plugin.debug.css';
+import 'rete-stage0-render-plugin/build/stage0-render-plugin.debug.css';
 
 document.getElementById("app").innerHTML = `<h1>Blendtree Prototype</h1>`;
 
@@ -15,7 +19,7 @@ const STORAGE_KEY = 'BLENDTREE_PROTOTYPE_DOCUMENT';
 
 (async () => {
   const container = document.querySelector("#rete");
-  var components = [new NumComponent(), new AddComponent(), new OutComponent()];
+  var components = [new NumComponent(), new AddComponent(), new OutComponent(), new StateComponent()];
 
   var editor = new Rete.NodeEditor("retejs@0.1.0", container);
   editor.use(ConnectionPlugin);//, { curvature: 0.4 });

@@ -1,5 +1,10 @@
 const PathModule = require('path')
 
+// const getDepPath = pathFragment => PathModule.resolve(
+//     __dirname,
+//     `./node_modules/${pathFragment}`
+// );
+
 module.exports = {
     mode: 'development',
     devtool: 'none',
@@ -11,6 +16,17 @@ module.exports = {
     },
     devServer: {
         contentBase: PathModule.join(__dirname, 'dist')
+    },
+    module: {
+        rules: [
+            {
+                test: /\.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader'
+                ]
+            }
+        ]
     }
 }
 
