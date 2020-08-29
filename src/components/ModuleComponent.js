@@ -1,12 +1,14 @@
 import { Component } from "rete";
 import TextControl from '../controls/TextControl';
+import Socket from "../sockets";
 
 export default class ModuleComponent extends Component {
 
   constructor() {
       super("Module");
       this.module = {
-          nodeType: 'module'
+          nodeType: 'module',
+          socket: Socket.skeleton,
       }
   }
 

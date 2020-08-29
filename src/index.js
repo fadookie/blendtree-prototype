@@ -16,7 +16,7 @@ import StateComponent from "./components/StateComponent";
 import StateMachineComponent from "./components/StateMachineComponent";
 import ModuleComponent from './components/ModuleComponent';
 
-import demoData from "./data/simple.json";
+// import demoData from "./data/simple.json";
 import modulesData from './data/modulesData.json';
 
 import './styles.css';
@@ -27,8 +27,11 @@ document.getElementById("app").innerHTML = `<h1>Blendtree Prototype</h1>`;
 
 const STORAGE_KEY = 'BLENDTREE_PROTOTYPE_DOCUMENT';
 
-var modules = Object.assign({}, modulesData);
+console.log('@@@ localStorage:', JSON.parse(localStorage.getItem(STORAGE_KEY)));
+
+var modules = Object.assign({}, modulesData, JSON.parse(localStorage.getItem(STORAGE_KEY)));
 var currentModule = {};
+var currentModuleId = 'index.rete';
 var editor;
 
 function setupModuleUI(moduleData) {
@@ -47,7 +50,12 @@ async function openModule(moduleId) {
   // TODO where does currentModule come from?
   currentModule.data = editor.toJSON();
   
+  currentModuleId = moduleId;
   currentModule = modules[moduleId];
+
+  //   const localDataString = localStorage.getItem(STORAGE_KEY);
+  //   if (localDataString) return JSON.parse(localDataString) || demoData;
+  //   return demoData;
   await editor.fromJSON(currentModule.data);
   editor.trigger('process')
 }
@@ -117,14 +125,13 @@ window.openModule = function(node) {
     "process nodecreated noderemoved connectioncreated connectionremoved",
     async () => {
       await engine.abort();
-      const data = editor.toJSON();
-      // localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      await engine.process(data);
+      currentModule.data = editor.toJSON();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(modules));
+      await engine.process(currentModule.data);
     }
   );
 
-  // openModule('index.rete').then(() => {
-  openModule('module1.rete').then(() => {
+  openModule(currentModuleId).then(() => {
     editor.view.resize();
     AreaPlugin.zoomAt(editor);
     editor.trigger("process");
