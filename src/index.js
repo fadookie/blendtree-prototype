@@ -1,15 +1,24 @@
 import 'regenerator-runtime/runtime';
+import _ from 'lodash';
 import Rete from "rete";
+
 import ConnectionPlugin from "rete-connection-plugin";
 import Stage0RenderPlugin from 'rete-stage0-render-plugin';
+import ContextMenuPlugin from "rete-context-menu-plugin";
+import ConnectionPathPlugin from 'rete-connection-path-plugin';
+import ModulePlugin from 'rete-module-plugin';
+import AreaPlugin from "rete-area-plugin";
+
 import NumComponent from "./components/NumComponent";
 import AddComponent from "./components/AddComponent";
 import OutComponent from "./components/OutComponent";
 import StateComponent from "./components/StateComponent";
 import StateMachineComponent from "./components/StateMachineComponent";
-import ContextMenuPlugin from "rete-context-menu-plugin";
-import AreaPlugin from "rete-area-plugin";
-import demoData from "./simple.json";
+import ModuleComponent from './components/ModuleComponent';
+
+import demoData from "./data/simple.json";
+import modulesData from './data/modulesData.json';
+
 import './styles.css';
 import 'rete-stage0-menu-plugin/build/stage0-menu-plugin.debug.css';
 import 'rete-stage0-render-plugin/build/stage0-render-plugin.debug.css';
@@ -17,6 +26,34 @@ import 'rete-stage0-render-plugin/build/stage0-render-plugin.debug.css';
 document.getElementById("app").innerHTML = `<h1>Blendtree Prototype</h1>`;
 
 const STORAGE_KEY = 'BLENDTREE_PROTOTYPE_DOCUMENT';
+
+var modules = Object.assign({}, modulesData);
+var currentModule = {};
+var editor;
+
+function setupModuleUI(moduleData) {
+  const modules = document.getElementById('modules-list');
+  _.forOwn(moduleData, (value, moduleId) => {
+    let module = document.createElement('li');
+    modules.appendChild(module);
+    module.outerHTML = `<li id="li-${moduleId}">
+      <a href="#" id="link-${moduleId}" moduleid="${moduleId}" onclick="openModule(this); return false;">${moduleId}</a>
+    </li>`;
+    module = document.getElementById(moduleId);
+  }); 
+}
+
+async function openModule(moduleId) {
+  // TODO where does currentModule come from?
+  currentModule.data = editor.toJSON();
+  
+  currentModule = modules[moduleId];
+  await editor.fromJSON(currentModule.data);
+  editor.trigger('process')
+}
+window.openModule = function(node) {
+  openModule(node.getAttribute("moduleid"));
+};
 
 (async () => {
   const container = document.querySelector("#rete");
@@ -26,14 +63,26 @@ const STORAGE_KEY = 'BLENDTREE_PROTOTYPE_DOCUMENT';
     new OutComponent(),
     new StateComponent(),
     new StateMachineComponent(),
+    new ModuleComponent(),
   ];
 
-  var editor = new Rete.NodeEditor("retejs@0.1.0", container);
-  editor.use(ConnectionPlugin, { curvature: 0 }); // TODO curvature has no effect?
+  editor = new Rete.NodeEditor("retejs@0.1.0", container);
+  editor.use(ConnectionPlugin);//, { curvature: 0 }); // TODO curvature has no effect?
   editor.use(Stage0RenderPlugin);
   editor.use(ContextMenuPlugin);
 
-  var engine = new Rete.Engine("retejs@0.1.0");
+  editor.use(ConnectionPathPlugin, {
+    type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer
+    transformer: () => ([x1, y1, x2, y2]) => [[x1, y1], [x2, y2]], // optional, custom transformer
+    curve: ConnectionPathPlugin.curveBundle, // curve identifier
+    options: { vertical: false, curvature: 0.4 }, // optional
+    arrow: { color: 'steelblue', marker: 'M-5,-10 L-5,10 L20,0 z' }
+  });
+
+  const engine = new Rete.Engine("retejs@0.1.0");
+
+  editor.use(ModulePlugin, { engine, modules });
+  setupModuleUI(modules);
 
   components.map((c) => {
     editor.register(c);
@@ -57,24 +106,27 @@ const STORAGE_KEY = 'BLENDTREE_PROTOTYPE_DOCUMENT';
 
   // console.log(editor.toJSON());
 
-  const data = (() => {
-    const localDataString = localStorage.getItem(STORAGE_KEY);
-    if (localDataString) return JSON.parse(localDataString) || demoData;
-    return demoData;
-  })();
-  await editor.fromJSON(data);
+  // const data = (() => {
+  //   const localDataString = localStorage.getItem(STORAGE_KEY);
+  //   if (localDataString) return JSON.parse(localDataString) || demoData;
+  //   return demoData;
+  // })();
+  // await editor.fromJSON(data);
 
   editor.on(
     "process nodecreated noderemoved connectioncreated connectionremoved",
     async () => {
       await engine.abort();
       const data = editor.toJSON();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      // localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       await engine.process(data);
     }
   );
 
-  editor.view.resize();
-  AreaPlugin.zoomAt(editor);
-  editor.trigger("process");
+  // openModule('index.rete').then(() => {
+  openModule('module1.rete').then(() => {
+    editor.view.resize();
+    AreaPlugin.zoomAt(editor);
+    editor.trigger("process");
+  });
 })();
