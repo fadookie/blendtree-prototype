@@ -1,193 +1,133 @@
 {
-  "index.rete": {
+    "index.rete": {
       "data": {
-          "id": "retejs@0.1.0",
-          "nodes": {
-              "4": {
-                  "id": 4,
-                  "data": {
-                      "module": "module1.rete"
-                  },
-                  "inputs": {
-                      "2": {
-                          "connections": [{
-                              "node": 12,
-                              "output": "num",
-                              "data": {}
-                          }]
-                      },
-                      "...": {
-                          "connections": [{
-                              "node": 12,
-                              "output": "num",
-                              "data": {}
-                          }]
-                      }
-                  },
-                  "outputs": {
-                      "...": {
-                          "connections": [{
-                              "node": 5,
-                              "input": "num1",
-                              "data": {}
-                          }, {
-                              "node": 5,
-                              "input": "num2",
-                              "data": {}
-                          }]
-                      }
-                  },
-                  "position": [854, 159],
-                  "name": "Module"
-              },
-              "5": {
-                  "id": 5,
-                  "data": {
-                      "num1": 0,
-                      "num2": 0
-                  },
-                  "inputs": {
-                      "num1": {
-                          "connections": [{
-                              "node": 4,
-                              "output": "...",
-                              "data": {}
-                          }]
-                      },
-                      "num2": {
-                          "connections": [{
-                              "node": 4,
-                              "output": "...",
-                              "data": {}
-                          }]
-                      }
-                  },
-                  "outputs": {
-                      "num": {
-                          "connections": []
-                      }
-                  },
-                  "position": [1217, 123],
-                  "name": "Add"
-              },
-              "12": {
-                  "id": 12,
-                  "data": {
-                      "num": 1
-                  },
-                  "inputs": {},
-                  "outputs": {
-                      "num": {
-                          "connections": [{
-                              "node": 4,
-                              "input": "...",
-                              "data": {}
-                          }, {
-                              "node": 4,
-                              "input": "2",
-                              "data": {}
-                          }]
-                      }
-                  },
-                  "position": [410, 212],
-                  "name": "Number"
+        "id": "retejs@0.1.0",
+        "nodes": {
+          "4": {
+            "id": 4,
+            "data": {
+              "module": "module1.rete"
+            },
+            "inputs": {
+              
+            },
+            "outputs": {
+              "undefined": {
+                "connections": [
+                  
+                ]
               }
+            },
+            "position": [
+              569.9484252929688,
+              53.2481689453125
+            ],
+            "name": "Module"
+          },
+          "19": {
+            "id": 19,
+            "data": {
+              
+            },
+            "inputs": {
+              "in": {
+                "connections": [
+                  
+                ]
+              }
+            },
+            "outputs": {
+              
+            },
+            "position": [
+              1031.8490295410156,
+              61.782623291015625
+            ],
+            "name": "Out"
+          },
+          "30": {
+            "id": 30,
+            "data": {
+              
+            },
+            "inputs": {
+              
+            },
+            "outputs": {
+              "skeleton": {
+                "connections": [
+                  
+                ]
+              }
+            },
+            "position": [
+              617.9895944363163,
+              275.59815054005617
+            ],
+            "name": "StateMachine"
           }
+        }
       }
-  },
-  "module1.rete": {
+    },
+    "module1.rete": {
       "data": {
-          "id": "retejs@0.1.0",
-          "nodes": {
-              "1": {
-                  "id": 1,
-                  "data": {
-                      "name": "..."
-                  },
-                  "inputs": {},
-                  "outputs": {
-                      "output": {
-                          "connections": [{
-                              "node": 9,
-                              "input": "num1",
-                              "data": {}
-                          }]
-                      }
-                  },
-                  "position": [348, 78],
-                  "name": "Input"
-              },
-              "2": {
-                  "id": 2,
-                  "data": {
-                      "name": "..."
-                  },
-                  "inputs": {
-                      "input": {
-                          "connections": [{
-                              "node": 9,
-                              "output": "num",
-                              "data": {}
-                          }]
-                      }
-                  },
-                  "outputs": {},
-                  "position": [1086, 202],
-                  "name": "Output"
-              },
-              "8": {
-                  "id": 8,
-                  "data": {
-                      "name": "2"
-                  },
-                  "inputs": {},
-                  "outputs": {
-                      "output": {
-                          "connections": [{
-                              "node": 9,
-                              "input": "num2",
-                              "data": {}
-                          }]
-                      }
-                  },
-                  "position": [285, 320],
-                  "name": "Input"
-              },
-              "9": {
-                  "id": 9,
-                  "data": {
-                      "num1": 0,
-                      "num2": 0
-                  },
-                  "inputs": {
-                      "num1": {
-                          "connections": [{
-                              "node": 1,
-                              "output": "output",
-                              "data": {}
-                          }]
-                      },
-                      "num2": {
-                          "connections": [{
-                              "node": 8,
-                              "output": "output",
-                              "data": {}
-                          }]
-                      }
-                  },
-                  "outputs": {
-                      "num": {
-                          "connections": [{
-                              "node": 2,
-                              "input": "input",
-                              "data": {}
-                          }]
-                      }
-                  },
-                  "position": [730, 275],
-                  "name": "Add"
+        "id": "retejs@0.1.0",
+        "nodes": {
+          "14": {
+            "id": 14,
+            "data": {
+              
+            },
+            "inputs": {
+              "in": {
+                "connections": [
+                  {
+                    "node": 15,
+                    "output": "skeleton",
+                    "data": {
+                      
+                    }
+                  }
+                ]
               }
+            },
+            "outputs": {
+              
+            },
+            "position": [
+              802.3598022460938,
+              276.01849365234375
+            ],
+            "name": "Out"
+          },
+          "15": {
+            "id": 15,
+            "data": {
+              
+            },
+            "inputs": {
+              
+            },
+            "outputs": {
+              "skeleton": {
+                "connections": [
+                  {
+                    "node": 14,
+                    "input": "in",
+                    "data": {
+                      
+                    }
+                  }
+                ]
+              }
+            },
+            "position": [
+              456.406005859375,
+              234.25042724609375
+            ],
+            "name": "StateMachine"
           }
+        }
       }
+    }
   }
-}
