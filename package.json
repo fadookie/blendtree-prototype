@@ -23,6 +23,7 @@
     "webpack-dev-server": "3.11.0"
   },
   "dependencies": {
+    "litegraph.js": "0.7.8",
     "lodash": "4.17.20",
     "regenerator-runtime": "0.13.7",
     "rete": "1.4.4",
