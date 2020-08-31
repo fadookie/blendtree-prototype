@@ -25,6 +25,7 @@
   "dependencies": {
     "litegraph.js": "0.7.8",
     "lodash": "4.17.20",
+    "p5": "1.1.9",
     "regenerator-runtime": "0.13.7",
     "rete": "1.4.4",
     "rete-area-plugin": "0.2.1",

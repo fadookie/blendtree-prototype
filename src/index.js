@@ -1,10 +1,16 @@
 import _ from 'lodash';
 import { LiteGraph, LGraph, LGraphCanvas } from 'litegraph.js';
+import P5 from 'p5';
+import MyAddNode from './components/MyAddNode';
+import sketch from './sketch';
 
 import './styles.css';
 import 'litegraph.js/css/litegraph.css';
 
-document.getElementById("app").innerHTML = `<h1>Blendtree Prototype</h1>`;
+new P5(sketch, document.getElementById("sketch"));
+
+//register in the system, also makes it inherit from LiteGraphNode
+LiteGraph.registerNodeType("eliot/myaddnode", MyAddNode );
 
 var graph = new LGraph();
 
