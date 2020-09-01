@@ -23,6 +23,7 @@
     "webpack-dev-server": "3.11.0"
   },
   "dependencies": {
+    "float": "1.0.2",
     "litegraph.js": "0.7.8",
     "lodash": "4.17.20",
     "p5": "1.1.9",

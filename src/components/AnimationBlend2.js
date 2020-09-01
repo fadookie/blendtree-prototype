@@ -1,6 +1,7 @@
 import invoke from 'lodash/invoke';
 import { blendSkeletons } from '../data/animationData';
-import { approxLTE, approxGTE } from '../util/math';
+// import { approxLTE, approxGTE } from '../util/math';
+import { greaterThanOrEquals, lessThanOrEquals } from 'float'
 
 //your node constructor class
 function AnimationBlend2()
@@ -12,7 +13,7 @@ function AnimationBlend2()
   this.addOutput("Out","skeleton");
   //add some properties
   this.addProperty("weight", 0.5);
-  this.widget = this.addWidget("number","weight",0.5,"weight");
+  this.widget = this.addWidget("slider","weight", this.properties.weight, v => this.setProperty('weight', v), { min: 0, max: 1 });
   // this.widgets_up = true;
 }
 
@@ -37,14 +38,14 @@ AnimationBlend2.prototype.onExecute = function()
   if (shallowAncestors[0] === shallowAncestors[1]) return; // someone is blending the same node with itself?
 
   // There are some precision errors with properties it seems, so use approx math
-  if (approxLTE(this.properties.weight,0)) {
+  if (lessThanOrEquals(this.properties.weight,0)) {
     if(shallowAncestors[1].pause) {
       shallowAncestors[1].pause(); // Should recursively update ancestors
     } else {
       //TODO recur
     }
     invoke(shallowAncestors[0], 'resume'); // Should resume if not playing, otherwise do nothing
-  } else if (approxGTE(this.properties.weight, 1)) {
+  } else if (greaterThanOrEquals(this.properties.weight, 1)) {
     if(shallowAncestors[0].pause) {
       shallowAncestors[0].pause();
     } else {
