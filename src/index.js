@@ -43,7 +43,7 @@ graph.start();
 // Poll for updates unless I find a better way of doing this
 const outputText = document.getElementById("output-text");
 setInterval(() => {
-	const outputName = 'blend';
+	const outputName = 'anim2';
 	// render json preview
 	const graphJson = JSON.stringify(graph.getOutputData(outputName), null, 2);
 	outputText.innerText = `${outputName}:
@@ -65,4 +65,13 @@ document.getElementById("download").addEventListener("click", () => {
 	element.click();
 	document.body.removeChild(element);
 	setTimeout( function(){ URL.revokeObjectURL( url ); }, 1000*60 ); //wait one minute to revoke url	
+});
+
+document.getElementById("demo").addEventListener("click", () => {
+	graph.configure(basicData);
+	graph.start();
+});
+
+document.getElementById("clear").addEventListener("click", () => {
+	graph.clear();
 });

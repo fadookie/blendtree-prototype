@@ -36,19 +36,25 @@ const sketch = graph => p5instance => {
     p.background(100);
 
     const anim1 = graph.getOutputData("anim1");
-    drawSkeleton(anim1, 'red');
+    if (anim1) {
+      drawSkeleton(anim1, 'red');
+    }
 
     const anim2 = graph.getOutputData("anim2");
-    p.push();
-    p.translate(150, 0);
-    drawSkeleton(anim2, 'blue');
-    p.pop();
+    if (anim2) {
+      p.push();
+      p.translate(150, 0);
+      drawSkeleton(anim2, 'blue');
+      p.pop();
+    }
 
     const blend = graph.getOutputData("blend");
-    p.push();
-    p.translate(350, 0);
-    drawSkeleton(blend, 'yellow');
-    p.pop();
+    if (blend) {
+      p.push();
+      p.translate(350, 0);
+      drawSkeleton(blend, 'yellow');
+      p.pop();
+    }
   };
   p.mousePressed = (event) => {
     console.log('@@@ mousePressed:', { x: p.mouseX, y: p.mouseY });

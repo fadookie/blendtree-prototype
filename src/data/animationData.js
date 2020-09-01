@@ -30,7 +30,9 @@ function triangleWave(x) {
   return Math.abs((x++ % 1) - 0.5);
 }
 
-export const getT = (timeS) => triangleWave(timeS * 1000 * 0.00009);
+export const getT = (timeS) => triangleWave(timeS); //* 0.09);
+
+export const duration = 1;
 
 export const lerpKeyframe = (a, b, t) => {
   const vec = Vector.lerp(a.v, b.v, t);

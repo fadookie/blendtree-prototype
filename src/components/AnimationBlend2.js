@@ -1,3 +1,4 @@
+import invoke from 'lodash/invoke';
 import { blendSkeletons } from '../data/animationData';
 
 //your node constructor class
@@ -10,7 +11,7 @@ function AnimationBlend2()
   this.addOutput("Out","skeleton");
   //add some properties
   this.addProperty("weight", 0.5);
-  this.widget = this.addWidget("number","weight",1,"weight");
+  this.widget = this.addWidget("number","weight",0.5,"weight");
   // this.widgets_up = true;
 }
 
@@ -27,6 +28,31 @@ AnimationBlend2.prototype.onExecute = function()
   if( B === undefined ) return;
   //assing data to otputs
   this.setOutputData( 0, blendSkeletons(A, B, this.properties.weight) );
+
+  //Cull graph
+  // TODO make this recursive and generic
+  const shallowAncestors = this.inputs.map(input =>
+    this.graph.getNodeById(this.graph.links[input.link].origin_id));
+  if (shallowAncestors[0] === shallowAncestors[1]) return; // someone is blending the same node with itself?
+  if (this.properties.weight <= 0) {
+    if(shallowAncestors[1].pause) {
+      shallowAncestors[1].pause(); // Should recursively update ancestors
+    } else {
+      //TODO recur
+    }
+    invoke(shallowAncestors[0], 'resume'); // Should resume if not playing, otherwise do nothing
+  } else if (this.properties.weight >= 1) {
+    if(shallowAncestors[0].pause) {
+      shallowAncestors[0].pause();
+    } else {
+      //TODO recur
+    }
+    invoke(shallowAncestors[1], 'resume');
+  } else {
+    invoke(shallowAncestors[0], 'resume');
+    invoke(shallowAncestors[1], 'resume');
+    //TODO recur
+  }
 }
 
 export default AnimationBlend2;
