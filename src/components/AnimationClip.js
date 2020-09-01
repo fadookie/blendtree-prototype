@@ -16,6 +16,8 @@ function AnimationClip() {
     // Using an ivar instead of a LGraphNode property so it doesn't get serialized
     this._playState = STATE_PLAYING;
     this.playingWidget = this.addWidget("string", "playing", this._playState);
+    this._lastSeekTimeNorm = 0;
+    this.size = [200, 200];
 }
 
 AnimationClip.title = "Animation Clip";
@@ -43,22 +45,39 @@ AnimationClip["@CLIP"] = {
 AnimationClip.prototype.onExecute = function() {
     if (this._startTimeS === undefined) this._startTimeS = this.graph.globaltime;
     const elapsedTimeS = this.graph.globaltime - this._startTimeS;
-    let seekTime = elapsedTimeS / duration;
     const loop = this.properties.loop;
-    if (seekTime > 1) {
-      if (loop)  {
-        seekTime = (elapsedTimeS % duration) / duration;
-      } else {
-        this.setPlayState(STATE_STOPPED);
+
+    // Calculate current normalized playback seek time (may be > 1)
+    let seekTimeNorm;
+    switch(this._playState) {
+      case STATE_PLAYING:
+      case STATE_STOPPED: {
+        seekTimeNorm = elapsedTimeS / duration;
+        break;
+      } case STATE_PAUSED: {
+        seekTimeNorm = this._lastSeekTimeNorm;
+        break;
+      } default: {
+        throw new Error(`Unrecognized state: ${this._playState}`);
       }
     }
-    if (this._playState === STATE_STOPPED) {
-      seekTime = 1;
+
+    // Clamp/wrap if needed
+    if (seekTimeNorm > 1) {
+      if (loop)  {
+        seekTimeNorm = (elapsedTimeS % duration) / duration;
+      } else {
+        this.setPlayState(STATE_STOPPED);
+        seekTimeNorm = 1;
+      }
     }
-    const t = getT(seekTime * 1.5); //make triangle wave function loop
+
+    this._lastSeekTimeNorm = seekTimeNorm;
+
+    const t = getT(seekTimeNorm * 1.5); //make triangle wave function loop
     const skeleton = getLerpedSkeleton(animators[this.properties.CLIP], t);
-    if (this.title === 'Animation Clip 2' && seekTime < 0.1) 
-      console.log(this.title, { loop, elapsedTimeS, seekTime, t, playState: this._playState }, skeleton); 
+    if (this.title === 'Animation Clip 2' && seekTimeNorm < 0.1) 
+      console.log(this.title, { loop, elapsedTimeS, seekTime: seekTimeNorm, t, playState: this._playState }, skeleton); 
     // this._value = skeleton;
     this.setOutputData(0, skeleton);
 };

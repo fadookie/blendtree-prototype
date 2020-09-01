@@ -1,5 +1,6 @@
 import invoke from 'lodash/invoke';
 import { blendSkeletons } from '../data/animationData';
+import { approxLTE, approxGTE } from '../util/math';
 
 //your node constructor class
 function AnimationBlend2()
@@ -29,19 +30,21 @@ AnimationBlend2.prototype.onExecute = function()
   //assing data to otputs
   this.setOutputData( 0, blendSkeletons(A, B, this.properties.weight) );
 
-  //Cull graph
+  // Cull graph, pause insignificant nodes
   // TODO make this recursive and generic
   const shallowAncestors = this.inputs.map(input =>
     this.graph.getNodeById(this.graph.links[input.link].origin_id));
   if (shallowAncestors[0] === shallowAncestors[1]) return; // someone is blending the same node with itself?
-  if (this.properties.weight <= 0) {
+
+  // There are some precision errors with properties it seems, so use approx math
+  if (approxLTE(this.properties.weight,0)) {
     if(shallowAncestors[1].pause) {
       shallowAncestors[1].pause(); // Should recursively update ancestors
     } else {
       //TODO recur
     }
     invoke(shallowAncestors[0], 'resume'); // Should resume if not playing, otherwise do nothing
-  } else if (this.properties.weight >= 1) {
+  } else if (approxGTE(this.properties.weight, 1)) {
     if(shallowAncestors[0].pause) {
       shallowAncestors[0].pause();
     } else {
