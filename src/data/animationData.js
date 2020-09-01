@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import pick from 'lodash/pick';
 import { Vector } from 'p5';
 
 export const animators = {};
@@ -9,7 +9,7 @@ const makeKeyframe = (x, y, r = 0) => ({ v: p5.createVector(x, y), r });
 export const init = p => {
   p5 = p;
   Vector.prototype.toJSON = function() {
-    return _.pick(this, ['x', 'y', 'z']);
+    return pick(this, ['x', 'y', 'z']);
   };
 
   animators.animator1 = { 

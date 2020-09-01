@@ -1,6 +1,5 @@
 import invoke from 'lodash/invoke';
 import { blendSkeletons } from '../data/animationData';
-// import { approxLTE, approxGTE } from '../util/math';
 import { greaterThanOrEquals, lessThanOrEquals } from 'float'
 
 //your node constructor class
@@ -13,7 +12,7 @@ function AnimationBlend2()
   this.addOutput("Out","skeleton");
   //add some properties
   this.addProperty("weight", 0.5);
-  this.widget = this.addWidget("slider","weight", this.properties.weight, v => this.setProperty('weight', v), { min: 0, max: 1 });
+  this.widget = this.addWidget("slider","weight", this.properties.weight, v => this.setProperty('weight', v), { min: 0, max: 1, property: "weight" });
   // this.widgets_up = true;
 }
 
@@ -57,6 +56,11 @@ AnimationBlend2.prototype.onExecute = function()
     invoke(shallowAncestors[1], 'resume');
     //TODO recur
   }
+}
+
+AnimationBlend2.prototype.onPropertyChanged = function(name, value) {
+  const widget = this.widgets.find(w => w.options.property == name);
+  if (widget) widget.value = value;
 }
 
 export default AnimationBlend2;

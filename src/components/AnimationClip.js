@@ -17,7 +17,7 @@ function AnimationClip() {
     this._playState = STATE_PLAYING;
     this.playingWidget = this.addWidget("string", "playing", this._playState);
     this._lastSeekTimeNorm = 0;
-    this.size = [200, 200];
+    // this.size = [200, 200];
 }
 
 AnimationClip.title = "Animation Clip";
@@ -115,7 +115,7 @@ AnimationClip.prototype.setPlayState = function(newState) {
   if (newState === STATE_PLAYING && this._playState !== STATE_PAUSED) this._startTimeS = this.graph.globaltime;
   this._playState = newState;
   this.playingWidget.value = newState;
-  this.setDirtyCanvas(true, true);
+  // this.setDirtyCanvas(true, true);
 }
 
 AnimationClip.prototype.pause = function(ctx) {

@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import omit from 'lodash/fp/omit';
 import { LiteGraph, LGraph, LGraphCanvas } from 'litegraph.js';
 import P5 from 'p5';
 import MyAddNode from './components/MyAddNode';
@@ -17,9 +17,9 @@ LiteGraph.registerNodeType("geckolib/AnimationClip", AnimationClip);
 LiteGraph.registerNodeType("geckolib/Blend2", AnimationBlend2);
 
 const LOCAL_STORAGE_KEY = 'BLENDTREE_PROTOTYPE_GRAPH';
-const savedData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || 'false');
+const savedData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || 'false') || basicData;
 
-const graph = new LGraph(savedData || basicData);
+const graph = new LGraph(cleanGraphData(savedData));
 window.LGraph = LGraph;
 
 const canvas = new LGraphCanvas("#mycanvas", graph);
@@ -50,7 +50,7 @@ setInterval(() => {
 ${graphJson}`;
 
 	//persist graph
-	localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(graph.serialize()));
+	localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleanGraphData(graph.serialize())));
 }, 1000);
 
 document.getElementById("download").addEventListener("click", () => {
@@ -68,10 +68,14 @@ document.getElementById("download").addEventListener("click", () => {
 });
 
 document.getElementById("demo").addEventListener("click", () => {
-	graph.configure(basicData);
+	graph.configure(cleanGraphData(basicData));
 	graph.start();
 });
 
 document.getElementById("clear").addEventListener("click", () => {
 	graph.clear();
 });
+
+function cleanGraphData(data) {
+	return Object.assign({}, data, { nodes: data.nodes.map(omit(['size'])) });
+}
