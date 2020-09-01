@@ -13,10 +13,10 @@ module.exports = {
     output: {
         filename: 'index.js',
         sourceMapFilename: 'index.js.map',
-        path: PathModule.resolve(__dirname, 'dist')
+        path: PathModule.resolve(__dirname, 'docs')
     },
     devServer: {
-        contentBase: PathModule.join(__dirname, 'dist')
+        contentBase: PathModule.join(__dirname, 'docs')
     },
     devtool: 'source-map',
     module: {
