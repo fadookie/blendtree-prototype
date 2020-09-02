@@ -13,37 +13,37 @@ export const init = p => {
   };
 
   animators.animator1 = { 
-    bone1: [makeKeyframe(120, 20), makeKeyframe(120, 60, 45)],
-    bone2: [makeKeyframe(40, 40, 0), makeKeyframe(120, 120, 90)],
-    bone3: [makeKeyframe(40, 40), makeKeyframe(120, 120)],
+    bone1: [makeKeyframe(120, 20),    makeKeyframe(120, 60, 45),    makeKeyframe(120, 20)],
+    bone2: [makeKeyframe(40, 40, 0),  makeKeyframe(120, 120, 90),   makeKeyframe(40, 40, 0)],
+    bone3: [makeKeyframe(40, 40),     makeKeyframe(120, 120),       makeKeyframe(40, 40)],
   };
   
   animators.animator2 = { 
-    bone1: [makeKeyframe(120, 20), makeKeyframe(200, 20, 45)],
-    bone2: [makeKeyframe(40, 40, 0), makeKeyframe(40, 40, -45)],
-    bone3: [makeKeyframe(40, 40), makeKeyframe(40, 40)]
+    bone1: [makeKeyframe(120, 20),    makeKeyframe(200, 20, 45),    makeKeyframe(120, 20)],
+    bone2: [makeKeyframe(40, 40, 0),  makeKeyframe(40, 40, -45),    makeKeyframe(40, 40, 0)],
+    bone3: [makeKeyframe(40, 40),     makeKeyframe(40, 40),         makeKeyframe(40, 40)]
   };
   
 };
 
-function triangleWave(x) {
-  return Math.abs((x++ % 1) - 0.5);
-}
-
-export const getT = (timeS) => triangleWave(timeS); //* 0.09);
-
-export const duration = 1;
+export const duration = 3;
 
 export const lerpKeyframe = (a, b, t) => {
   const vec = Vector.lerp(a.v, b.v, t);
   return makeKeyframe(vec.x, vec.y, p5.lerp(a.r, b.r, t));
 }
 
-export const getLerpedSkeleton = (animator, t) => ({
-  bone1: lerpKeyframe(animator.bone1[0], animator.bone1[1], t),
-  bone2: lerpKeyframe(animator.bone2[0], animator.bone2[1], t),
-  bone3: lerpKeyframe(animator.bone3[0], animator.bone3[1], t),    
-});
+export const getLerpedSkeleton = (animator, t) => {
+  const numFrames = animator.bone1.length;
+  const fromIndex = Math.min(Math.floor(t * numFrames), numFrames - 2);
+  const toIndex = fromIndex + 1;
+  const res = {
+    bone1: lerpKeyframe(animator.bone1[fromIndex], animator.bone1[toIndex], t),
+    bone2: lerpKeyframe(animator.bone2[fromIndex], animator.bone2[toIndex], t),
+    bone3: lerpKeyframe(animator.bone3[fromIndex], animator.bone3[toIndex], t),    
+  };
+  return res;
+};
 
 // TODO: blend to buffer
 export const blendSkeletons = (a, b, weight) => ({

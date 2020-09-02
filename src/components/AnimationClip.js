@@ -1,4 +1,4 @@
-import { animators, getT, duration, getLerpedSkeleton } from '../data/animationData';
+import { animators, duration, getLerpedSkeleton } from '../data/animationData';
 
 const STATE_PLAYING = "playing";
 const STATE_PAUSED = "paused";
@@ -65,22 +65,39 @@ AnimationClip.prototype.onExecute = function() {
     // Clamp/wrap if needed
     if (seekTimeNorm > 1) {
       if (loop)  {
-        seekTimeNorm = (elapsedTimeS % duration) / duration;
+        seekTimeNorm = seekTimeNorm % 1;
       } else {
         this.setPlayState(STATE_STOPPED);
         seekTimeNorm = 1;
       }
     }
 
-    this._lastSeekTimeNorm = seekTimeNorm;
+    if (this._playState === STATE_PLAYING) this._lastSeekTimeNorm = seekTimeNorm;
 
-    const t = getT(seekTimeNorm * 1.5); //make triangle wave function loop
-    const skeleton = getLerpedSkeleton(animators[this.properties.CLIP], t);
-    if (this.title === 'Animation Clip 2' && seekTimeNorm < 0.1) 
-      console.log(this.title, { loop, elapsedTimeS, seekTime: seekTimeNorm, t, playState: this._playState }, skeleton); 
+    const skeleton = getLerpedSkeleton(animators[this.properties.CLIP], seekTimeNorm);
+    if (this.title === 'Animation Clip 2') 
+      console.log(this.title, { loop, elapsedTimeS, seekTime: seekTimeNorm, playState: this._playState }, skeleton); 
     // this._value = skeleton;
     this.setOutputData(0, skeleton);
+
+    if (!this.isOutputConnected(0)) {
+      this.pause();
+    }
 };
+
+AnimationClip.prototype.onConnectionsChange = function(
+  connection,
+  slot,
+  connected,
+  link_info
+) {
+  console.log('@@@onOutputRemoved slot:', slot);
+  if (this.isOutputConnected(0)) {
+    if (this._playState === STATE_PAUSED) this.play();
+  } else {
+    this.pause();
+  }
+}
 
 AnimationClip.prototype.onDrawBackground = function(ctx) {
   //show the current value
@@ -110,7 +127,7 @@ AnimationClip.prototype.setPlayState = function(newState) {
   // }
 
   if (this.title === 'Animation Clip 2')
-    console.log('@@@ setIsPlaying unique:', newState);
+    console.log('@@@ setPlayState unique:', newState);
 
   if (newState === STATE_PLAYING && this._playState !== STATE_PAUSED) this._startTimeS = this.graph.globaltime;
   this._playState = newState;
@@ -119,15 +136,15 @@ AnimationClip.prototype.setPlayState = function(newState) {
 }
 
 AnimationClip.prototype.pause = function(ctx) {
-  if (this.title === 'Animation Clip 2') 
-    console.log('@@@PAUSE');
+  // if (this.title === 'Animation Clip 2') 
+  //   console.log('@@@PAUSE');
 
   this.setPlayState(STATE_PAUSED);
 }
 
 AnimationClip.prototype.play = function(ctx) {
-  if (this.title === 'Animation Clip 2') 
-    console.log('@@@PLAY');
+  // if (this.title === 'Animation Clip 2') 
+  //   console.log('@@@PLAY');
 
   this.setPlayState(STATE_PLAYING);
 }
