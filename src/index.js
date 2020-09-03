@@ -38,7 +38,7 @@ initAnimationData(p5);
 
 // node_const.connect(0, node_watch, 0 );
 
-graph.start();
+// graph.start();
 
 // Poll for updates unless I find a better way of doing this
 const outputText = document.getElementById("output-text");
@@ -75,6 +75,26 @@ document.getElementById("demo").addEventListener("click", () => {
 document.getElementById("clear").addEventListener("click", () => {
 	graph.clear();
 });
+
+document.getElementById("playpause").addEventListener("click", () => {
+	if (graph.status === LGraph.STATUS_RUNNING) {
+		graph.stop();
+	} else {
+		graph.start();
+	}
+});
+
+document.getElementById("step").addEventListener("click", () => {
+	if (graph.status !== LGraph.STATUS_RUNNING) {
+		graph.runStep();
+	}
+});
+
+document.getElementById("refresh").addEventListener('change', (val) => {
+	console.log('@@@ change args:', arguments);
+	// TODO use refresh value in start call
+});
+
 
 function cleanGraphData(data) {
 	return Object.assign({}, data, { nodes: data.nodes.map(omit(['size'])) });

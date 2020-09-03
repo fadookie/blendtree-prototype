@@ -43,7 +43,10 @@ AnimationClip["@CLIP"] = {
 };
 
 AnimationClip.prototype.onExecute = function() {
-    if (this._startTimeS === undefined) this._startTimeS = this.graph.globaltime;
+    if (this._startTimeS === undefined || this._startTimeS > this.graph.globaltime) {
+      // Don't ask me how timers can go negative but it happens
+      this._startTimeS = this.graph.globaltime;
+    }
     const elapsedTimeS = this.graph.globaltime - this._startTimeS;
     const loop = this.properties.loop;
 
@@ -74,9 +77,9 @@ AnimationClip.prototype.onExecute = function() {
 
     if (this._playState === STATE_PLAYING) this._lastSeekTimeNorm = seekTimeNorm;
 
-    const skeleton = getLerpedSkeleton(animators[this.properties.CLIP], seekTimeNorm);
-    if (this.title === 'Animation Clip 2') 
-      console.log(this.title, { loop, elapsedTimeS, seekTime: seekTimeNorm, playState: this._playState }, skeleton); 
+    const skeleton = getLerpedSkeleton(animators[this.properties.CLIP], seekTimeNorm, this.title);
+    // if (this.title === 'Animation Clip 2') 
+    //   console.log(this.title, { loop, elapsedTimeS, seekTime: seekTimeNorm, playState: this._playState }, skeleton); 
     // this._value = skeleton;
     this.setOutputData(0, skeleton);
 
@@ -89,7 +92,7 @@ AnimationClip.prototype.onConnectionsChange = function(
   connection,
   slot,
   connected,
-  link_info
+  link_inf
 ) {
   console.log('@@@onOutputRemoved slot:', slot);
   if (this.isOutputConnected(0)) {

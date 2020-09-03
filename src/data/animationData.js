@@ -33,15 +33,36 @@ export const lerpKeyframe = (a, b, t) => {
   return makeKeyframe(vec.x, vec.y, p5.lerp(a.r, b.r, t));
 }
 
-export const getLerpedSkeleton = (animator, t) => {
+// let lastAnim2FromIndex = null;
+
+export const getLerpedSkeleton = (animator, t, debugTitle) => {
   const numFrames = animator.bone1.length;
-  const fromIndex = Math.min(Math.floor(t * numFrames), numFrames - 2);
-  const toIndex = fromIndex + 1;
+  const frameLength = duration / numFrames;
+  const timeS = t * (numFrames - 1);
+  const fromIndex = Math.floor(timeS);
+  const fromIndexFloor = Math.min(fromIndex, numFrames - 1);
+  const toIndex = (fromIndexFloor + 1)  % numFrames;
+  const timeIntoFrameS = timeS - (fromIndex * frameLength)
+  const timeIntoFrameNorm = timeIntoFrameS / frameLength;
+  // if (toIndex >= numFrames) console.error('argh');
+  // if (debugTitle === 'Animation Clip 2' && lastAnim2FromIndex !== fromIndex)  {
+  //   console.warn('@@@ getLerpedSkeleton keyframe change', { t, timeIntoFrameNorm, lastAnim2FromIndex, fromIndex, toIndex });
+  //   if (lastAnim2FromIndex === 0 && fromIndex === 1) {
+  //     console.error('@@@ problem child');
+  //   }
+  //   lastAnim2FromIndex = fromIndex;
+  // }
+  // if (debugTitle === 'Animation Clip 2' && timeIntoFrameNorm > 1)  {
+  //   console.error('@@@ over 1');
+  // }
   const res = {
-    bone1: lerpKeyframe(animator.bone1[fromIndex], animator.bone1[toIndex], t),
-    bone2: lerpKeyframe(animator.bone2[fromIndex], animator.bone2[toIndex], t),
-    bone3: lerpKeyframe(animator.bone3[fromIndex], animator.bone3[toIndex], t),    
+    bone1: lerpKeyframe(animator.bone1[fromIndexFloor], animator.bone1[toIndex], timeIntoFrameNorm),
+    bone2: lerpKeyframe(animator.bone2[fromIndexFloor], animator.bone2[toIndex], timeIntoFrameNorm),
+    bone3: lerpKeyframe(animator.bone3[fromIndexFloor], animator.bone3[toIndex], timeIntoFrameNorm),    
   };
+  // if (debugTitle === 'Animation Clip 2')  {
+  //   console.log('@@@ getLerpedSkeleton', { t, timeIntoFrameNorm, lastAnim2FromIndex, fromIndex, toIndex }, 'res:', res);
+  // }
   return res;
 };
 
