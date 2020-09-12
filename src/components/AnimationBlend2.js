@@ -14,6 +14,7 @@ function AnimationBlend2()
   this.addProperty("weight", 0.5);
   this.widget = this.addWidget("slider","weight", this.properties.weight, v => this.setProperty('weight', v), { min: 0, max: 1, property: "weight" });
   // this.widgets_up = true;
+  this._isPlaying = false;
 }
 
 //name to show on the canvas
@@ -32,28 +33,31 @@ AnimationBlend2.prototype.onExecute = function()
 
   // Cull graph, pause insignificant nodes
   // TODO make this recursive and generic
+  // and maybe it's easier to do this as lookahead instead of lookbehind
+  // So multiple children can be taken into account, giving each node a playing state incl. blends
+  // Or just keep lookbehind but use reference counting
   const shallowAncestors = this.inputs.map(input =>
     this.graph.getNodeById(this.graph.links[input.link].origin_id));
   if (shallowAncestors[0] === shallowAncestors[1]) return; // someone is blending the same node with itself?
 
   // There are some precision errors with properties it seems, so use approx math
   if (lessThanOrEquals(this.properties.weight,0)) {
-    if(shallowAncestors[1].pause) {
-      shallowAncestors[1].pause(); // Should recursively update ancestors
+    if(shallowAncestors[1].setCulled) {
+      invoke(shallowAncestors[1], 'setCulled', true); // TODO Should recursively update ancestors
     } else {
       //TODO recur
     }
-    invoke(shallowAncestors[0], 'resume'); // Should resume if not playing, otherwise do nothing
+    invoke(shallowAncestors[0], 'setCulled', false);
   } else if (greaterThanOrEquals(this.properties.weight, 1)) {
-    if(shallowAncestors[0].pause) {
-      shallowAncestors[0].pause();
+    if(shallowAncestors[0].setCulled) {
+      invoke(shallowAncestors[0], 'setCulled', true); // TODO Should recursively update ancestors
     } else {
       //TODO recur
     }
-    invoke(shallowAncestors[1], 'resume');
+    invoke(shallowAncestors[1], 'setCulled', false);
   } else {
-    invoke(shallowAncestors[0], 'resume');
-    invoke(shallowAncestors[1], 'resume');
+    invoke(shallowAncestors[0], 'setCulled', false);
+    invoke(shallowAncestors[1], 'setCulled', false);
     //TODO recur
   }
 }

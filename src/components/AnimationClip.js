@@ -3,20 +3,20 @@ import { animators, duration, getLerpedSkeleton } from '../data/animationData';
 const STATE_PLAYING = "playing";
 const STATE_PAUSED = "paused";
 const STATE_STOPPED = "stopped";
-//to store json objects
+
 function AnimationClip() {
     this.addOutput("", "skeleton");
-    // this.addProperty("value", "");
-    // this.widget = this.addWidget("text","json","","value");
-    // this.widgets_up = true;
-    // this.size = [140, 30];
     this.addProperty("CLIP", AnimationClip.values[0], "enum", { values: AnimationClip.values });
     this.addProperty("loop", true);
-    this.loopWidget = this.addWidget("toggle","loop",this.properties.loop,"loop");
+    this.loopWidget = this.addWidget("toggle", "loop", this.properties.loop, "loop");
     // Using an ivar instead of a LGraphNode property so it doesn't get serialized
-    this._playState = STATE_PLAYING;
+    this._playState = STATE_PAUSED;
     this.playingWidget = this.addWidget("string", "playing", this._playState);
-    this._lastSeekTimeNorm = 0;
+    this.addProperty("speed", 1);
+    this.widget = this.addWidget("slider", "speed", this.properties.speed, this.setProperty.bind(this, 'speed'), { min: 0, max: 10, property: "speed" });
+    this._seekTime = 0;
+    this._culled = false;
+    this.culledWidget = this.addWidget("toggle", "culled", this._culled);
     // this.size = [200, 200];
 }
 
@@ -43,28 +43,24 @@ AnimationClip["@CLIP"] = {
 };
 
 AnimationClip.prototype.onExecute = function() {
-    if (this._startTimeS === undefined || this._startTimeS > this.graph.globaltime) {
-      // Don't ask me how timers can go negative but it happens
-      this._startTimeS = this.graph.globaltime;
-    }
-    const elapsedTimeS = this.graph.globaltime - this._startTimeS;
     const loop = this.properties.loop;
 
     // Calculate current normalized playback seek time (may be > 1)
-    let seekTimeNorm;
     switch(this._playState) {
-      case STATE_PLAYING:
-      case STATE_STOPPED: {
-        seekTimeNorm = elapsedTimeS / duration;
+      case STATE_PLAYING: {
+        this._seekTime += this.graph.elapsed_time * this.properties.speed;
         break;
-      } case STATE_PAUSED: {
-        seekTimeNorm = this._lastSeekTimeNorm;
+      } case STATE_STOPPED:
+        case STATE_PAUSED: {
         break;
       } default: {
         throw new Error(`Unrecognized state: ${this._playState}`);
       }
     }
+    
+    if (this._culled) return;
 
+    let seekTimeNorm = this._seekTime / duration;
     // Clamp/wrap if needed
     if (seekTimeNorm > 1) {
       if (loop)  {
@@ -75,8 +71,6 @@ AnimationClip.prototype.onExecute = function() {
       }
     }
 
-    if (this._playState === STATE_PLAYING) this._lastSeekTimeNorm = seekTimeNorm;
-
     const skeleton = getLerpedSkeleton(animators[this.properties.CLIP], seekTimeNorm, this.title);
     // if (this.title === 'Animation Clip 2') 
     //   console.log(this.title, { loop, elapsedTimeS, seekTime: seekTimeNorm, playState: this._playState }, skeleton); 
@@ -84,7 +78,7 @@ AnimationClip.prototype.onExecute = function() {
     this.setOutputData(0, skeleton);
 
     if (!this.isOutputConnected(0)) {
-      this.pause();
+      this.setCulled(true);
     }
 };
 
@@ -98,7 +92,7 @@ AnimationClip.prototype.onConnectionsChange = function(
   if (this.isOutputConnected(0)) {
     if (this._playState === STATE_PAUSED) this.play();
   } else {
-    this.pause();
+    this.setCulled(true);
   }
 }
 
@@ -117,17 +111,6 @@ AnimationClip.prototype.onDrawBackground = function(ctx) {
 
 AnimationClip.prototype.setPlayState = function(newState) {
   if (newState === this._playState) return;
-  // switch(this._playState) {
-  //   case STATE_PLAYING: {
-  //     break;
-  //   } case STATE_PAUSED: {
-  //     break;
-  //   } case STATE_STOPPED: {
-  //     break;
-  //   } default: {
-  //     throw new Error(`Unrecognized state: ${this._playState}`);
-  //   }
-  // }
 
   if (this.title === 'Animation Clip 2')
     console.log('@@@ setPlayState unique:', newState);
@@ -135,7 +118,6 @@ AnimationClip.prototype.setPlayState = function(newState) {
   if (newState === STATE_PLAYING && this._playState !== STATE_PAUSED) this._startTimeS = this.graph.globaltime;
   this._playState = newState;
   this.playingWidget.value = newState;
-  // this.setDirtyCanvas(true, true);
 }
 
 AnimationClip.prototype.pause = function(ctx) {
@@ -155,6 +137,13 @@ AnimationClip.prototype.play = function(ctx) {
 AnimationClip.prototype.resume = function(ctx) {
   if (this._playState === STATE_STOPPED) return;
   this.setPlayState(STATE_PLAYING);
+}
+
+AnimationClip.prototype.setCulled = function(culled) {
+  if (this.title === 'Animation Clip 2' && this._culled !== culled) 
+    console.log('@@@ setCulled unique', culled);
+  this._culled = culled;
+  this.culledWidget.value = culled;
 }
 
 // AnimationClip.prototype.setValue = function(v) {
