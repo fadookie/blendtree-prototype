@@ -15,8 +15,8 @@ function AnimationClip() {
     this.addProperty("speed", 1);
     this.widget = this.addWidget("slider", "speed", this.properties.speed, this.setProperty.bind(this, 'speed'), { min: 0, max: 10, property: "speed" });
     this._seekTime = 0;
-    this._culled = false;
-    this.culledWidget = this.addWidget("toggle", "culled", this._culled);
+    this._refs = new Set();
+    this.refCountWidget = this.addWidget("number", "refCount", this._refs.size);
     // this.size = [200, 200];
 }
 
@@ -43,6 +43,7 @@ AnimationClip["@CLIP"] = {
 };
 
 AnimationClip.prototype.onExecute = function() {
+    // console.log(`@@@ onExectue ${this.name} refs:`, this._refs);
     const loop = this.properties.loop;
 
     // Calculate current normalized playback seek time (may be > 1)
@@ -58,24 +59,24 @@ AnimationClip.prototype.onExecute = function() {
       }
     }
     
-    if (this._culled) return;
-
-    let seekTimeNorm = this._seekTime / duration;
-    // Clamp/wrap if needed
-    if (seekTimeNorm > 1) {
-      if (loop)  {
-        seekTimeNorm = seekTimeNorm % 1;
-      } else {
-        this.setPlayState(STATE_STOPPED);
-        seekTimeNorm = 1;
+    // Cull processing for un-retained nodes
+    if (this._refs.size > 0 || !this._skeleton) {
+      let seekTimeNorm = this._seekTime / duration;
+      // Clamp/wrap if needed
+      if (seekTimeNorm > 1) {
+        if (loop)  {
+          seekTimeNorm = seekTimeNorm % 1;
+        } else {
+          this.setPlayState(STATE_STOPPED);
+          seekTimeNorm = 1;
+        }
       }
-    }
 
-    const skeleton = getLerpedSkeleton(animators[this.properties.CLIP], seekTimeNorm, this.title);
+      this._skeleton = getLerpedSkeleton(animators[this.properties.CLIP], seekTimeNorm, this.title);
+    }
     // if (this.title === 'Animation Clip 2') 
-    //   console.log(this.title, { loop, elapsedTimeS, seekTime: seekTimeNorm, playState: this._playState }, skeleton); 
-    // this._value = skeleton;
-    this.setOutputData(0, skeleton);
+    //   console.log(this.title, { playState: this._playState, loop, seekTime: this._seekTime }, this._skeleton); 
+    this.setOutputData(0, this._skeleton);
 
     if (!this.isOutputConnected(0)) {
       this.setCulled(true);
@@ -139,11 +140,18 @@ AnimationClip.prototype.resume = function(ctx) {
   this.setPlayState(STATE_PLAYING);
 }
 
-AnimationClip.prototype.setCulled = function(culled) {
-  if (this.title === 'Animation Clip 2' && this._culled !== culled) 
-    console.log('@@@ setCulled unique', culled);
-  this._culled = culled;
-  this.culledWidget.value = culled;
+AnimationClip.prototype.retain = function(retainer) {
+  if (!this._refs.has(retainer))
+    console.log(`@@@ ${this.title} retain retainer:`, retainer.title, `refs:`, this._refs);
+  this._refs.add(retainer);
+  this.refCountWidget.value = this._refs.size;
+}
+
+AnimationClip.prototype.release = function(retainer) {
+  this._refs.delete(retainer);
+  this.refCountWidget.value = this._refs.size;
+  if (this._refs.has(retainer))
+    console.log(`@@@ ${this.title} release retainer:`, retainer.title, `refs:`, this._refs);
 }
 
 // AnimationClip.prototype.setValue = function(v) {

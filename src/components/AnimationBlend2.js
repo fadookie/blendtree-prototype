@@ -23,6 +23,7 @@ AnimationBlend2.title = "Blend 2";
 //function to call when the node is executed
 AnimationBlend2.prototype.onExecute = function()
 {
+  // console.log(`@@@ AnimationBlend2[${this.title}] onExecute 1`);
   //retrieve data from inputs
   var A = this.getInputData(0);
   if( A === undefined ) return;
@@ -42,22 +43,22 @@ AnimationBlend2.prototype.onExecute = function()
 
   // There are some precision errors with properties it seems, so use approx math
   if (lessThanOrEquals(this.properties.weight,0)) {
-    if(shallowAncestors[1].setCulled) {
-      invoke(shallowAncestors[1], 'setCulled', true); // TODO Should recursively update ancestors
+    if(shallowAncestors[1].release) {
+      invoke(shallowAncestors[1], 'release', this); // TODO Should recursively update ancestors
     } else {
       //TODO recur
     }
-    invoke(shallowAncestors[0], 'setCulled', false);
+    invoke(shallowAncestors[0], 'retain', this);
   } else if (greaterThanOrEquals(this.properties.weight, 1)) {
-    if(shallowAncestors[0].setCulled) {
-      invoke(shallowAncestors[0], 'setCulled', true); // TODO Should recursively update ancestors
+    if(shallowAncestors[0].retain) {
+      invoke(shallowAncestors[0], 'release', this); // TODO Should recursively update ancestors
     } else {
       //TODO recur
     }
-    invoke(shallowAncestors[1], 'setCulled', false);
+    invoke(shallowAncestors[1], 'retain', this);
   } else {
-    invoke(shallowAncestors[0], 'setCulled', false);
-    invoke(shallowAncestors[1], 'setCulled', false);
+    invoke(shallowAncestors[0], 'retain', this);
+    invoke(shallowAncestors[1], 'retain', this);
     //TODO recur
   }
 }
