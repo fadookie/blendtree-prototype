@@ -8,6 +8,7 @@ function AnimationClip() {
     this.addOutput("", "skeleton");
     this.addProperty("CLIP", AnimationClip.values[0], "enum", { values: AnimationClip.values });
     this.addProperty("loop", true);
+    this.clipWidget = this.addWidget("combo","Clip", this.properties.CLIP, "CLIP", { values: AnimationClip.values } );
     this.loopWidget = this.addWidget("toggle", "loop", this.properties.loop, "loop");
     // Using an ivar instead of a LGraphNode property so it doesn't get serialized
     this._playState = STATE_PAUSED;
@@ -106,6 +107,7 @@ AnimationClip.prototype.onDrawBackground = function(ctx) {
   const widget = this.widgets.find(w => w.options.property == name);
   if (widget) widget.value = value;
   if (name === "loop" && !!value && this._playState === STATE_STOPPED) this.setPlayState(STATE_PLAYING);
+  this.setDirtyCanvas(true, true);
  };
 
 //#endregion LGraphNode Callbacks
