@@ -38245,6 +38245,7 @@ function AnimationBlend2()
   this.addProperty("weight", 0.5);
   this.widget = this.addWidget("slider","weight", this.properties.weight, v => this.setProperty('weight', v), { min: 0, max: 1, property: "weight" });
   // this.widgets_up = true;
+  this._isPlaying = false;
 }
 
 //name to show on the canvas
@@ -38253,6 +38254,7 @@ AnimationBlend2.title = "Blend 2";
 //function to call when the node is executed
 AnimationBlend2.prototype.onExecute = function()
 {
+  // console.log(`@@@ AnimationBlend2[${this.title}] onExecute 1`);
   //retrieve data from inputs
   var A = this.getInputData(0);
   if( A === undefined ) return;
@@ -38263,28 +38265,31 @@ AnimationBlend2.prototype.onExecute = function()
 
   // Cull graph, pause insignificant nodes
   // TODO make this recursive and generic
+  // and maybe it's easier to do this as lookahead instead of lookbehind
+  // So multiple children can be taken into account, giving each node a playing state incl. blends
+  // Or just keep lookbehind but use reference counting
   const shallowAncestors = this.inputs.map(input =>
     this.graph.getNodeById(this.graph.links[input.link].origin_id));
   if (shallowAncestors[0] === shallowAncestors[1]) return; // someone is blending the same node with itself?
 
   // There are some precision errors with properties it seems, so use approx math
   if (Object(float__WEBPACK_IMPORTED_MODULE_2__["lessThanOrEquals"])(this.properties.weight,0)) {
-    if(shallowAncestors[1].pause) {
-      shallowAncestors[1].pause(); // Should recursively update ancestors
+    if(shallowAncestors[1].release) {
+      lodash_invoke__WEBPACK_IMPORTED_MODULE_0___default()(shallowAncestors[1], 'release', this); // TODO Should recursively update ancestors
     } else {
       //TODO recur
     }
-    lodash_invoke__WEBPACK_IMPORTED_MODULE_0___default()(shallowAncestors[0], 'resume'); // Should resume if not playing, otherwise do nothing
+    lodash_invoke__WEBPACK_IMPORTED_MODULE_0___default()(shallowAncestors[0], 'retain', this);
   } else if (Object(float__WEBPACK_IMPORTED_MODULE_2__["greaterThanOrEquals"])(this.properties.weight, 1)) {
-    if(shallowAncestors[0].pause) {
-      shallowAncestors[0].pause();
+    if(shallowAncestors[0].retain) {
+      lodash_invoke__WEBPACK_IMPORTED_MODULE_0___default()(shallowAncestors[0], 'release', this); // TODO Should recursively update ancestors
     } else {
       //TODO recur
     }
-    lodash_invoke__WEBPACK_IMPORTED_MODULE_0___default()(shallowAncestors[1], 'resume');
+    lodash_invoke__WEBPACK_IMPORTED_MODULE_0___default()(shallowAncestors[1], 'retain', this);
   } else {
-    lodash_invoke__WEBPACK_IMPORTED_MODULE_0___default()(shallowAncestors[0], 'resume');
-    lodash_invoke__WEBPACK_IMPORTED_MODULE_0___default()(shallowAncestors[1], 'resume');
+    lodash_invoke__WEBPACK_IMPORTED_MODULE_0___default()(shallowAncestors[0], 'retain', this);
+    lodash_invoke__WEBPACK_IMPORTED_MODULE_0___default()(shallowAncestors[1], 'retain', this);
     //TODO recur
   }
 }
@@ -38313,20 +38318,21 @@ __webpack_require__.r(__webpack_exports__);
 const STATE_PLAYING = "playing";
 const STATE_PAUSED = "paused";
 const STATE_STOPPED = "stopped";
-//to store json objects
+
 function AnimationClip() {
     this.addOutput("", "skeleton");
-    // this.addProperty("value", "");
-    // this.widget = this.addWidget("text","json","","value");
-    // this.widgets_up = true;
-    // this.size = [140, 30];
     this.addProperty("CLIP", AnimationClip.values[0], "enum", { values: AnimationClip.values });
     this.addProperty("loop", true);
-    this.loopWidget = this.addWidget("toggle","loop",this.properties.loop,"loop");
+    this.clipWidget = this.addWidget("combo","Clip", this.properties.CLIP, "CLIP", { values: AnimationClip.values } );
+    this.loopWidget = this.addWidget("toggle", "loop", this.properties.loop, "loop");
     // Using an ivar instead of a LGraphNode property so it doesn't get serialized
-    this._playState = STATE_PLAYING;
+    this._playState = STATE_PAUSED;
     this.playingWidget = this.addWidget("string", "playing", this._playState);
-    this._lastSeekTimeNorm = 0;
+    this.addProperty("speed", 1);
+    this.widget = this.addWidget("slider", "speed", this.properties.speed, this.setProperty.bind(this, 'speed'), { min: 0, max: 10, property: "speed" });
+    this._seekTime = 0;
+    this._refs = new Set();
+    this.refCountWidget = this.addWidget("number", "refCount", this._refs.size);
     // this.size = [200, 200];
 }
 
@@ -38353,44 +38359,59 @@ AnimationClip["@CLIP"] = {
 };
 
 AnimationClip.prototype.onExecute = function() {
-    if (this._startTimeS === undefined) this._startTimeS = this.graph.globaltime;
-    const elapsedTimeS = this.graph.globaltime - this._startTimeS;
+    // console.log(`@@@ onExectue ${this.name} refs:`, this._refs);
     const loop = this.properties.loop;
 
     // Calculate current normalized playback seek time (may be > 1)
-    let seekTimeNorm;
     switch(this._playState) {
-      case STATE_PLAYING:
-      case STATE_STOPPED: {
-        seekTimeNorm = elapsedTimeS / _data_animationData__WEBPACK_IMPORTED_MODULE_0__["duration"];
+      case STATE_PLAYING: {
+        this._seekTime += this.graph.elapsed_time * this.properties.speed;
         break;
-      } case STATE_PAUSED: {
-        seekTimeNorm = this._lastSeekTimeNorm;
+      } case STATE_STOPPED:
+        case STATE_PAUSED: {
         break;
       } default: {
         throw new Error(`Unrecognized state: ${this._playState}`);
       }
     }
-
-    // Clamp/wrap if needed
-    if (seekTimeNorm > 1) {
-      if (loop)  {
-        seekTimeNorm = (elapsedTimeS % _data_animationData__WEBPACK_IMPORTED_MODULE_0__["duration"]) / _data_animationData__WEBPACK_IMPORTED_MODULE_0__["duration"];
-      } else {
-        this.setPlayState(STATE_STOPPED);
-        seekTimeNorm = 1;
+    
+    // Cull processing for un-retained nodes
+    if (this._refs.size > 0 || !this._skeleton) {
+      let seekTimeNorm = this._seekTime / _data_animationData__WEBPACK_IMPORTED_MODULE_0__["duration"];
+      // Clamp/wrap if needed
+      if (seekTimeNorm > 1) {
+        if (loop)  {
+          seekTimeNorm = seekTimeNorm % 1;
+        } else {
+          this.setPlayState(STATE_STOPPED);
+          seekTimeNorm = 1;
+        }
       }
+
+      this._skeleton = Object(_data_animationData__WEBPACK_IMPORTED_MODULE_0__["getLerpedSkeleton"])(_data_animationData__WEBPACK_IMPORTED_MODULE_0__["animators"][this.properties.CLIP], seekTimeNorm, this.title);
     }
+    // if (this.title === 'Animation Clip 2') 
+    //   console.log(this.title, { playState: this._playState, loop, seekTime: this._seekTime }, this._skeleton); 
+    this.setOutputData(0, this._skeleton);
 
-    this._lastSeekTimeNorm = seekTimeNorm;
-
-    const t = Object(_data_animationData__WEBPACK_IMPORTED_MODULE_0__["getT"])(seekTimeNorm * 1.5); //make triangle wave function loop
-    const skeleton = Object(_data_animationData__WEBPACK_IMPORTED_MODULE_0__["getLerpedSkeleton"])(_data_animationData__WEBPACK_IMPORTED_MODULE_0__["animators"][this.properties.CLIP], t);
-    if (this.title === 'Animation Clip 2' && seekTimeNorm < 0.1) 
-      console.log(this.title, { loop, elapsedTimeS, seekTime: seekTimeNorm, t, playState: this._playState }, skeleton); 
-    // this._value = skeleton;
-    this.setOutputData(0, skeleton);
+    if (!this.isOutputConnected(0)) {
+      this.setCulled(true);
+    }
 };
+
+AnimationClip.prototype.onConnectionsChange = function(
+  connection,
+  slot,
+  connected,
+  link_inf
+) {
+  console.log('@@@onOutputRemoved slot:', slot);
+  if (this.isOutputConnected(0)) {
+    if (this._playState === STATE_PAUSED) this.play();
+  } else {
+    this.setCulled(true);
+  }
+}
 
 AnimationClip.prototype.onDrawBackground = function(ctx) {
   //show the current value
@@ -38401,43 +38422,32 @@ AnimationClip.prototype.onDrawBackground = function(ctx) {
   const widget = this.widgets.find(w => w.options.property == name);
   if (widget) widget.value = value;
   if (name === "loop" && !!value && this._playState === STATE_STOPPED) this.setPlayState(STATE_PLAYING);
+  this.setDirtyCanvas(true, true);
  };
 
 //#endregion LGraphNode Callbacks
 
 AnimationClip.prototype.setPlayState = function(newState) {
   if (newState === this._playState) return;
-  // switch(this._playState) {
-  //   case STATE_PLAYING: {
-  //     break;
-  //   } case STATE_PAUSED: {
-  //     break;
-  //   } case STATE_STOPPED: {
-  //     break;
-  //   } default: {
-  //     throw new Error(`Unrecognized state: ${this._playState}`);
-  //   }
-  // }
 
   if (this.title === 'Animation Clip 2')
-    console.log('@@@ setIsPlaying unique:', newState);
+    console.log('@@@ setPlayState unique:', newState);
 
   if (newState === STATE_PLAYING && this._playState !== STATE_PAUSED) this._startTimeS = this.graph.globaltime;
   this._playState = newState;
   this.playingWidget.value = newState;
-  // this.setDirtyCanvas(true, true);
 }
 
 AnimationClip.prototype.pause = function(ctx) {
-  if (this.title === 'Animation Clip 2') 
-    console.log('@@@PAUSE');
+  // if (this.title === 'Animation Clip 2') 
+  //   console.log('@@@PAUSE');
 
   this.setPlayState(STATE_PAUSED);
 }
 
 AnimationClip.prototype.play = function(ctx) {
-  if (this.title === 'Animation Clip 2') 
-    console.log('@@@PLAY');
+  // if (this.title === 'Animation Clip 2') 
+  //   console.log('@@@PLAY');
 
   this.setPlayState(STATE_PLAYING);
 }
@@ -38445,6 +38455,20 @@ AnimationClip.prototype.play = function(ctx) {
 AnimationClip.prototype.resume = function(ctx) {
   if (this._playState === STATE_STOPPED) return;
   this.setPlayState(STATE_PLAYING);
+}
+
+AnimationClip.prototype.retain = function(retainer) {
+  if (!this._refs.has(retainer))
+    console.log(`@@@ ${this.title} retain retainer:`, retainer.title, `refs:`, this._refs);
+  this._refs.add(retainer);
+  this.refCountWidget.value = this._refs.size;
+}
+
+AnimationClip.prototype.release = function(retainer) {
+  this._refs.delete(retainer);
+  this.refCountWidget.value = this._refs.size;
+  if (this._refs.has(retainer))
+    console.log(`@@@ ${this.title} release retainer:`, retainer.title, `refs:`, this._refs);
 }
 
 // AnimationClip.prototype.setValue = function(v) {
@@ -38501,14 +38525,13 @@ MyAddNode.prototype.onExecute = function()
 /*!***********************************!*\
   !*** ./src/data/animationData.js ***!
   \***********************************/
-/*! exports provided: animators, init, getT, duration, lerpKeyframe, getLerpedSkeleton, blendSkeletons */
+/*! exports provided: animators, init, duration, lerpKeyframe, getLerpedSkeleton, blendSkeletons */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "animators", function() { return animators; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "init", function() { return init; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getT", function() { return getT; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "duration", function() { return duration; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "lerpKeyframe", function() { return lerpKeyframe; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getLerpedSkeleton", function() { return getLerpedSkeleton; });
@@ -38532,37 +38555,58 @@ const init = p => {
   };
 
   animators.animator1 = { 
-    bone1: [makeKeyframe(120, 20), makeKeyframe(120, 60, 45)],
-    bone2: [makeKeyframe(40, 40, 0), makeKeyframe(120, 120, 90)],
-    bone3: [makeKeyframe(40, 40), makeKeyframe(120, 120)],
+    bone1: [makeKeyframe(120, 20),    makeKeyframe(120, 60, 45),    makeKeyframe(120, 20)],
+    bone2: [makeKeyframe(40, 40, 0),  makeKeyframe(120, 120, 90),   makeKeyframe(40, 40, 0)],
+    bone3: [makeKeyframe(40, 40),     makeKeyframe(120, 120),       makeKeyframe(40, 40)],
   };
   
   animators.animator2 = { 
-    bone1: [makeKeyframe(120, 20), makeKeyframe(200, 20, 45)],
-    bone2: [makeKeyframe(40, 40, 0), makeKeyframe(40, 40, -45)],
-    bone3: [makeKeyframe(40, 40), makeKeyframe(40, 40)]
+    bone1: [makeKeyframe(120, 20),    makeKeyframe(200, 20, 45),    makeKeyframe(120, 20)],
+    bone2: [makeKeyframe(40, 40, 0),  makeKeyframe(40, 40, -45),    makeKeyframe(40, 40, 0)],
+    bone3: [makeKeyframe(40, 40),     makeKeyframe(40, 40),         makeKeyframe(40, 40)]
   };
   
 };
 
-function triangleWave(x) {
-  return Math.abs((x++ % 1) - 0.5);
-}
-
-const getT = (timeS) => triangleWave(timeS); //* 0.09);
-
-const duration = 1;
+const duration = 3;
 
 const lerpKeyframe = (a, b, t) => {
   const vec = p5__WEBPACK_IMPORTED_MODULE_1__["Vector"].lerp(a.v, b.v, t);
   return makeKeyframe(vec.x, vec.y, p5.lerp(a.r, b.r, t));
 }
 
-const getLerpedSkeleton = (animator, t) => ({
-  bone1: lerpKeyframe(animator.bone1[0], animator.bone1[1], t),
-  bone2: lerpKeyframe(animator.bone2[0], animator.bone2[1], t),
-  bone3: lerpKeyframe(animator.bone3[0], animator.bone3[1], t),    
-});
+// let lastAnim2FromIndex = null;
+
+const getLerpedSkeleton = (animator, t, debugTitle) => {
+  const numFrames = animator.bone1.length;
+  const frameLength = duration / numFrames;
+  const timeS = t * (numFrames - 1);
+  const fromIndex = Math.floor(timeS);
+  const fromIndexFloor = Math.min(fromIndex, numFrames - 1);
+  const toIndex = (fromIndexFloor + 1)  % numFrames;
+  const timeIntoFrameS = timeS - (fromIndex * frameLength)
+  const timeIntoFrameNorm = timeIntoFrameS / frameLength;
+  // if (toIndex >= numFrames) console.error('argh');
+  // if (debugTitle === 'Animation Clip 2' && lastAnim2FromIndex !== fromIndex)  {
+  //   console.warn('@@@ getLerpedSkeleton keyframe change', { t, timeIntoFrameNorm, lastAnim2FromIndex, fromIndex, toIndex });
+  //   if (lastAnim2FromIndex === 0 && fromIndex === 1) {
+  //     console.error('@@@ problem child');
+  //   }
+  //   lastAnim2FromIndex = fromIndex;
+  // }
+  // if (debugTitle === 'Animation Clip 2' && timeIntoFrameNorm > 1)  {
+  //   console.error('@@@ over 1');
+  // }
+  const res = {
+    bone1: lerpKeyframe(animator.bone1[fromIndexFloor], animator.bone1[toIndex], timeIntoFrameNorm),
+    bone2: lerpKeyframe(animator.bone2[fromIndexFloor], animator.bone2[toIndex], timeIntoFrameNorm),
+    bone3: lerpKeyframe(animator.bone3[fromIndexFloor], animator.bone3[toIndex], timeIntoFrameNorm),    
+  };
+  // if (debugTitle === 'Animation Clip 2')  {
+  //   console.log('@@@ getLerpedSkeleton', { t, timeIntoFrameNorm, lastAnim2FromIndex, fromIndex, toIndex }, 'res:', res);
+  // }
+  return res;
+};
 
 // TODO: blend to buffer
 const blendSkeletons = (a, b, weight) => ({
@@ -38651,7 +38695,7 @@ Object(_data_animationData__WEBPACK_IMPORTED_MODULE_8__["init"])(p5);
 
 // node_const.connect(0, node_watch, 0 );
 
-graph.start();
+// graph.start();
 
 // Poll for updates unless I find a better way of doing this
 const outputText = document.getElementById("output-text");
@@ -38688,6 +38732,26 @@ document.getElementById("demo").addEventListener("click", () => {
 document.getElementById("clear").addEventListener("click", () => {
 	graph.clear();
 });
+
+document.getElementById("playpause").addEventListener("click", () => {
+	if (graph.status === litegraph_js__WEBPACK_IMPORTED_MODULE_1__["LGraph"].STATUS_RUNNING) {
+		graph.stop();
+	} else {
+		graph.start();
+	}
+});
+
+document.getElementById("step").addEventListener("click", () => {
+	if (graph.status !== litegraph_js__WEBPACK_IMPORTED_MODULE_1__["LGraph"].STATUS_RUNNING) {
+		graph.runStep();
+	}
+});
+
+document.getElementById("refresh").addEventListener('change', (val) => {
+	console.log('@@@ change args:', arguments);
+	// TODO use refresh value in start call
+});
+
 
 function cleanGraphData(data) {
 	return Object.assign({}, data, { nodes: data.nodes.map(lodash_fp_omit__WEBPACK_IMPORTED_MODULE_0___default()(['size'])) });
