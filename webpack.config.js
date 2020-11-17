@@ -1,4 +1,5 @@
 const PathModule = require('path')
+const GitRevisionPlugin = require('git-revision-webpack-plugin')
 
 // const getDepPath = pathFragment => PathModule.resolve(
 //     __dirname,
@@ -29,6 +30,9 @@ module.exports = {
                 ]
             }
         ]
-    }
+    },
+    plugins: [
+      new GitRevisionPlugin()
+    ]
 }
 
